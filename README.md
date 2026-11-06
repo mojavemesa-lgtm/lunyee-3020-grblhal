@@ -43,7 +43,7 @@ Power off, open the box. P50 is the 4-pin header below-left of the big chip U4. 
 
 ![Zoom: P50 pin 2 wired to the top end of R102](images/1_R102_and_P50_zoom.png)
 
-Plug the wire onto P50 pin 2 (second from the GND end). Hold the other end on the TOP end of R102. Not the bottom end: that is ground. Power on with the wire held. The board looks dead; that is correct, it is waiting in the bootloader.
+Plug the wire onto P50 pin 2 (second from the GND end). Hold the other end on the TOP end of R102. Not the bottom end: that is ground. Power on with the wire held. You only need to hold it for a moment: once the power is on you can take the end off R102 (keep it away from the board, it is 3.3 V). The board looks dead; that is correct, it is waiting in the bootloader.
 
 ## 2. Flash
 
@@ -55,7 +55,7 @@ The board is `/dev/ttyUSB0` on Linux or a COM port on Windows (write `COM5` inst
    stm32flash -b 57600 /dev/ttyUSB0
    ```
 
-2. First time only: unlock, then power off and on with the wire still held:
+2. First time only: unlock, then power off and on, touching the wire to R102 again as the power comes on:
 
    ```
    stm32flash -b 57600 -k /dev/ttyUSB0
@@ -109,13 +109,13 @@ The short guide above is enough to do the job. This part explains what each step
 
 The brain of the control board is a GD32F303 microcontroller, a Chinese twin of the STM32F103. Every chip in that family has a tiny program burned in at the factory, the ROM bootloader, that can receive a new program over a serial line. It is permanent and cannot be erased, so you can always get back to it. The USB socket on the control box is a CH340 USB-to-serial chip wired to the same serial pins the bootloader listens on. That is why a plain USB cable is enough and no programmer is needed.
 
-At power-on the chip looks at one pin, BOOT0. If it is low, the chip runs the firmware in its flash memory (GRBL). If it is high, the chip runs the bootloader instead. On this board BOOT0 is held low by R102, a 10 k resistor to ground, and there is no button or jumper for it. The wire from P50 pin 2 (the board's 3.3 V supply) to the top end of R102 pulls BOOT0 high. Only a third of a milliamp flows through the resistor, so nothing can be damaged. The bottom end of R102 is ground, which is why the wire must never touch it. Once the chip is in the bootloader nothing else runs, so the board looks dead.
+At power-on the chip looks at one pin, BOOT0. If it is low, the chip runs the firmware in its flash memory (GRBL). If it is high, the chip runs the bootloader instead. It only looks at that moment, which is why the wire can come off once the power is on. On this board BOOT0 is held low by R102, a 10 k resistor to ground, and there is no button or jumper for it. The wire from P50 pin 2 (the board's 3.3 V supply) to the top end of R102 pulls BOOT0 high. Only a third of a milliamp flows through the resistor, so nothing can be damaged. The bottom end of R102 is ground, which is why the wire must never touch it. Once the chip is in the bootloader nothing else runs, so the board looks dead.
 
 ### Step 2 in detail
 
 - **Baud rate and parity.** The bootloader talks at 8 data bits, even parity, 1 stop bit. stm32flash uses that by default, so you only give the speed. The CH340 chip on this board makes errors at 115200 with parity on, and the write then fails its check. 57600 is reliable and takes about a minute and a half for the 170 KB file.
 - **Identify.** stm32flash sends a sync byte and the bootloader answers with its chip ID. 0x414 means "STM32F10x high density, 256 KB flash"; the GD32 reports itself as its STM32 twin. If the command says it cannot init the device, the chip is not in the bootloader, which nearly always means the wire was not making contact at the moment the power came on.
-- **Unlock.** Lunyee ships the chip with read protection on, so the factory firmware cannot be copied out of it. Read protection also blocks writing. The `-k` option removes it. On a genuine STM32 this erases the whole chip; on this GD32 it did not, but treat it as if it does. After `-k` the bootloader drops the connection, so you power off and on with the wire still held, then identify again. This is only ever needed once.
+- **Unlock.** Lunyee ships the chip with read protection on, so the factory firmware cannot be copied out of it. Read protection also blocks writing. The `-k` option removes it. On a genuine STM32 this erases the whole chip; on this GD32 it did not, but treat it as if it does. After `-k` the bootloader drops the connection, so you power off and on with the wire touching R102 again at power-on, then identify again. This is only ever needed once.
 - **Write.** `-w` names the file, `-v` reads every block back and compares it, and `-S 0x08000000` is the address where flash starts. A `.bin` file has no addresses of its own, so the start address must be given. A `.hex` file carries its own addresses, which is why the factory file is written without `-S`. The progress counter runs to 100 % twice: once writing, once verifying.
 - **First boot.** With the wire removed and the power cycled, BOOT0 is low again and the chip starts grblHAL. The settings live in the last page of flash, separate from the program. `$RST=$` writes the built-in defaults into that page so you start from a known state. `$H` homes the machine.
 
@@ -154,11 +154,11 @@ FACTS
 FIRST FLASH ONLY: THE WIRE
 - With the machine powered OFF, open the control box. Find the big square chip U4. Just below-left of it is a 4-pin header labelled P50. Directly under P50 is a row of small parts; R102 is one of them, close to the GND end of P50.
 - Plug the socket end of a jumper wire onto pin 2 of P50 (the second pin counting from the GND end). Hold the other end on the TOP end of R102. Never the bottom end of R102, that is ground.
-- Switch the power on while holding the wire. The board looks dead. That is correct: the chip is waiting in its ROM bootloader.
+- Switch the power on while holding the wire. Hold it only for a moment: BOOT0 is checked at power-on, so once the power is on take the end off R102 and keep it clear of the board (it is 3.3 V). The board looks dead. That is correct: the chip is waiting in its ROM bootloader.
 
 COMMANDS (replace /dev/ttyUSB0 with the COM port on Windows; always 57600 baud, 115200 fails verification on this board)
 1. Identify: stm32flash -b 57600 /dev/ttyUSB0        -> expect chip ID 0x414
-2. First time only, remove read protection: stm32flash -b 57600 -k /dev/ttyUSB0        -> then power off and on with the wire still held, and run step 1 again
+2. First time only, remove read protection: stm32flash -b 57600 -k /dev/ttyUSB0        -> then power off and on with the wire touching R102 again at power-on, and run step 1 again
 3. Write and verify: stm32flash -b 57600 -w grblhal-lunyee3020-stock-2026-10-04.bin -v -S 0x08000000 /dev/ttyUSB0        -> must end at 100 % verified; if it fails, run the same command again, do not power off
 4. Remove the wire. Power off and on. Connect a GRBL sender at 115200 baud, 8N1. The banner says GrblHAL 1.1f. Send $RST=$ and then $H.
 
