@@ -12,7 +12,7 @@ Not affiliated with Lunyee. Use at your own risk.
 
 | File | What | Download |
 | --- | --- | --- |
-| grblHAL firmware | `grblhal-lunyee3020-stock-2026-10-04.bin`: grblHAL 1.1f for this board, built from the [source](https://github.com/mojavemesa-lgtm/grblHAL-STM32F1xx-lunyee) (commit 7a63f5a, PlatformIO env `lunyee_3axis`). | https://github.com/mojavemesa-lgtm/lunyee-3020-grblhal/releases/download/2026-10-04/grblhal-lunyee3020-stock-2026-10-04.bin |
+| grblHAL firmware | `grblhal-lunyee3020-stock-2026-10-04.bin`: grblHAL 1.1f for this board, built from the [source](https://github.com/mojavemesa-lgtm/grblHAL-STM32F1xx-lunyee) (commit e1d3a25, PlatformIO env `lunyee_3axis`). | https://github.com/mojavemesa-lgtm/lunyee-3020-grblhal/releases/download/2026-10-04/grblhal-lunyee3020-stock-2026-10-04.bin |
 | Stock Lunyee firmware | `_VGRBL-3axis-1.0.8.4.hex`: Lunyee's factory firmware 1.0.8.4 (GRBL 1.1f, build 2025-09-29), as shipped on the 3020. It cannot be read out of the chip, so keep a copy. | https://github.com/mojavemesa-lgtm/lunyee-3020-grblhal/releases/download/2026-10-04/_VGRBL-3axis-1.0.8.4.hex |
 | grblHAL source | The grblHAL STM32F1xx driver with this board added. | https://github.com/mojavemesa-lgtm/grblHAL-STM32F1xx-lunyee |
 
